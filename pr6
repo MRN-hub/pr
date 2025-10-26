@@ -1,0 +1,627 @@
+using System;
+using System.Collections.Generic;
+using System.Numerics;
+
+namespace TextRoguelike
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Game game = new Game();
+            game.Start();
+        }
+    }
+
+    public class Item
+    {
+        public string Name { get; set; }
+        public int Attack;
+        public int Defense;
+
+        public Item(string name, int attack = 0, int defense = 0)
+        {
+            Name = name;
+            Attack = attack;
+            Defense = defense;
+        }
+    }
+
+    public class Player
+    {
+        public int MaxHP = 100;
+        public int HP = 100;
+        public Item Weapon { get; set; }
+        public Item Armor { get; set; }
+
+        public Player()
+        {
+            Weapon = new Item("Палка", 7, 0);
+            Armor = new Item("Листик", 0, 1);
+        }
+
+        public int GetAttack()
+        {
+            return Weapon.Attack;
+        }
+
+        public int GetDefense()
+        {
+            return Armor.Defense;
+        }
+    }
+
+    public abstract class Enemy
+    {
+        public string Name { get; set; }
+        public int HP;
+        public int MaxHP;
+        public int Attack;
+        public int Defense;
+        public virtual string Race { get; }
+
+        public abstract void SpecialAbility(Player player, Random random);
+        public abstract string GetSpecialDescription();
+
+        public bool IsAlive
+        {
+            get { return HP > 0; }
+        }
+    }
+
+    public class Goblin : Enemy
+    {
+        private readonly Random _random;
+        public override string Race
+        {
+            get { return "Гоблин"; }
+        }
+
+        public Goblin(Random random)
+        {
+            _random = random;
+            Name = "Гоблин";
+            HP = 25;
+            MaxHP = 25;
+            Attack = 2;
+            Defense = 3;
+        }
+
+        public override void SpecialAbility(Player player, Random random)
+        {
+            if (random.Next(100) < 20)
+            {
+                Console.WriteLine("Критический удар!");
+            }
+        }
+
+        public override string GetSpecialDescription()
+        {
+            return "Шанс крита";
+        }
+    }
+
+    public class Skeleton : Enemy
+    {
+        public override string Race
+        {
+            get { return "Скелет"; }
+        }
+
+        public Skeleton()
+        {
+            Name = "Скелет";
+            HP = 25;
+            MaxHP = 25;
+            Attack = 3;
+            Defense = 4;
+        }
+
+        public override void SpecialAbility(Player player, Random random)
+        {
+        }
+
+        public override string GetSpecialDescription()
+        {
+            return "Игнор защиты";
+        }
+    }
+
+    public class Mage : Enemy
+    {
+        private readonly Random _random;
+        public override string Race
+        {
+            get { return "Маг"; }
+        }
+
+        public Mage(Random random)
+        {
+            _random = random;
+            Name = "Маг";
+            HP = 20;
+            MaxHP = 20;
+            Attack = 4;
+            Defense = 2;
+        }
+
+        public override void SpecialAbility(Player player, Random random)
+        {
+            if (random.Next(100) < 25)
+            {
+                Console.WriteLine("Заморозка!");
+            }
+        }
+
+        public override string GetSpecialDescription()
+        {
+            return "Шанс заморозки";
+        }
+    }
+    public class Gordov : Mage
+    {
+        public Gordov(Random random) : base(random)
+        {
+            Name = "Гордов";
+            HP = 100;
+            MaxHP = 100;
+            Attack = 25;
+            Defense = 9;
+        }
+        public override string GetSpecialDescription()
+        {
+            return "Игнор защиты";
+        }
+    }
+    public class VVG : Goblin
+    {
+        public VVG(Random random) : base(random)
+        {
+            Name = "ВВГ";
+            HP = (int)(MaxHP * 2.0);
+            MaxHP = HP;
+            Attack = (int)(Attack * 1.5);
+            Defense = (int)(Defense * 1.2);
+        }
+
+        public override void SpecialAbility(Player player, Random random)
+        {
+            if (random.Next(100) < 30)
+            {
+                Console.WriteLine("Крит босса!");
+            }
+        }
+    }
+
+    public class Kovalsky : Skeleton
+    {
+        public Kovalsky()
+        {
+            Name = "Ковальский";
+            HP = (int)(25 * 2.5);
+            MaxHP = HP;
+            Attack = (int)(10 * 1.3);
+            Defense = (int)(5 * 1.4);
+        }
+    }
+
+    public class ArchmageCPP : Mage
+    {
+        public ArchmageCPP(Random random) : base(random)
+        {
+            Name = "Архимаг C++";
+            HP = (int)(20 * 1.8);
+            MaxHP = HP;
+            Attack = (int)(12 * 1.6);
+            Defense = (int)(2 * 1.1);
+        }
+
+        public override void SpecialAbility(Player player, Random random)
+        {
+            if (random.Next(100) < 35)
+            {
+                Console.WriteLine("Сильная заморозка!");
+            }
+        }
+    }
+
+    public class PestovCS : Skeleton
+    {
+        private readonly Random _random;
+        public PestovCS(Random random)
+        {
+            _random = random;
+            Name = "Пестов С--";
+            HP = (int)(25 * 1.3);
+            MaxHP = HP;
+            Attack = (int)(10 * 1.8);
+            Defense = (int)(5 * 0.6);
+        }
+
+        public override void SpecialAbility(Player player, Random random)
+        {
+        }
+
+        public override string GetSpecialDescription()
+        {
+            return "Игнор защиты";
+        }
+    }
+
+    public class Game
+    {
+        private Player player;
+        private Random random;
+        private int turn;
+        private bool playerFrozen;
+        private int enemyBuffLevel;
+
+        private List<Item> weapons = new List<Item>
+        {
+            new Item("Деревянный меч", 10, 0),
+            new Item("Посох", 13, 0),
+            new Item("Розочка", 15, 0),
+            new Item("Клинок, просто клинок", 16, 0),
+            new Item("Топор", 19, 0),
+            new Item("Кинжал из драконьей чешуи", 26, 0),
+            new Item("Питон", 30,0),
+            new Item("Двемерский двуручный меч", 40, 0)
+        };
+
+        private List<Item> armors = new List<Item>
+        {
+            new Item("Картонка",0, 3),
+            new Item("Рабские кандалы",0,5),
+            new Item("Кожаная броня", 0, 8),
+            new Item("Кольчуга", 0, 11),
+            new Item("Шлюхобронь", 0, 15),
+            new Item("Драконья чешуя", 0, 16),
+            new Item("Двемерские доспехи", 0, 25)
+        };
+
+        public Game()
+        {
+            player = new Player();
+            random = new Random();
+            turn = 0;
+            playerFrozen = false;
+            enemyBuffLevel = 0;
+        }
+
+        public void Start()
+        {
+            Console.WriteLine("Начало игры");
+
+            while (player.HP > 0)
+            {
+                turn++;
+                Console.WriteLine("----------------");
+                Console.WriteLine($"Ход {turn} (Бафф врагов: +{enemyBuffLevel})");
+                CheckHP();
+                Console.WriteLine($"Оружие: {player.Weapon.Name}, {player.Weapon.Attack}");
+                Console.WriteLine($"Броня: {player.Armor.Name}, {player.Armor.Defense}");
+
+                if (playerFrozen)
+                {
+                    Console.WriteLine("Пропуск хода");
+                    playerFrozen = false;
+                    continue;
+                }
+                if (turn % 5 == 0)
+                {
+                    enemyBuffLevel++;
+                    player.MaxHP += 10;
+                    player.HP += 10;
+                    Console.WriteLine($"Усиление, уровень баффа: +{enemyBuffLevel}");
+                    Console.WriteLine($"Ваше максимальное HP увеличено до {player.MaxHP}");
+                }
+                if (turn % 10 == 0)
+                {
+                    Console.WriteLine("Босс");
+                    FightBoss();
+                }
+                if (turn % 49 == 0 || turn % 50 == 49)
+                {
+                    FightLegendaryBoss();
+                }
+                if (turn % 100 == 0)
+                {
+                    Console.WriteLine("100 этаж");
+                    player.MaxHP += 50;
+                    player.HP += 50;
+                }
+                else
+                {
+                    if (random.Next(2) == 0)
+                    {
+                        FindChest();
+                    }
+                    else
+                    {
+                        FightEnemy();
+                    }
+                }
+
+                if (player.HP <= 0)
+                {
+                    Console.WriteLine("Вы погибли");
+                    Console.WriteLine($"Ходов: {turn}");
+                    break;
+                }
+
+                Console.WriteLine("Пошел");
+                Console.ReadKey();
+            }
+        }
+        public void CheckHP()
+        {
+            int hp = player.HP;
+            int mhp = player.MaxHP;
+            if (hp < mhp / 100 * 30)
+            {
+                Console.Write("Ваше HP:");
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(hp);
+                Console.ForegroundColor = ConsoleColor.Gray;
+            }
+            else if (hp < mhp / 100 * 60 && hp > mhp / 100 * 30)
+            {
+                Console.Write("Ваше HP:");
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine(hp);
+                Console.ForegroundColor = ConsoleColor.Gray;
+            }
+            else
+            {
+                Console.Write("Ваше HP:");
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine(hp);
+                Console.ForegroundColor = ConsoleColor.Gray;
+            }
+        }
+        private void FightLegendaryBoss()
+        {
+            Enemy boss;
+            Console.WriteLine("ПОЯВЛЯЕТСЯ ЛЕГЕНДАРНЫЙ БОСС");
+            boss = EnemyWithBuff(new Gordov(random));
+            Console.WriteLine($"{boss.Name}");
+            Console.WriteLine($"HP: {boss.HP} ATK: {boss.Attack} DEF: {boss.Defense}");
+            Console.WriteLine($"Особенность: {boss.GetSpecialDescription()}");
+            Fight(boss);
+        }
+        private void FightBoss()
+        {
+            Enemy boss;
+            int bossType = random.Next(4);
+            switch (bossType)
+            {
+                case 0:
+                    boss = EnemyWithBuff(new VVG(random));
+                    break;
+                case 1:
+                    boss = EnemyWithBuff(new Kovalsky());
+                    break;
+                case 2:
+                    boss = EnemyWithBuff(new ArchmageCPP(random));
+                    break;
+                case 3:
+                    boss = EnemyWithBuff(new PestovCS(random));
+                    break;
+                default:
+                    boss = EnemyWithBuff(new VVG(random));
+                    break;
+            }
+
+            Console.WriteLine($"{boss.Name}");
+            Console.WriteLine($"HP: {boss.HP} ATK: {boss.Attack} DEF: {boss.Defense}");
+            Console.WriteLine($"Особенность: {boss.GetSpecialDescription()}");
+
+            Fight(boss);
+        }
+        private Enemy EnemyWithBuff(Enemy enemy)
+        {
+            enemy.HP += enemyBuffLevel;
+            enemy.MaxHP += enemyBuffLevel;
+            enemy.Attack += enemyBuffLevel;
+            return enemy;
+        }
+        private void FightEnemy()
+        {
+            Enemy enemy;
+            int enemyType = random.Next(3);
+
+            switch (enemyType)
+            {
+                case 0:
+                    enemy = EnemyWithBuff(new Goblin(random));
+                    break;
+                case 1:
+                    enemy = EnemyWithBuff(new Skeleton());
+                    break;
+                case 2:
+                    enemy = EnemyWithBuff(new Mage(random));
+                    break;
+                default:
+                    enemy = EnemyWithBuff(new Goblin(random));
+                    break;
+            }
+
+            Console.WriteLine($"{enemy.Name}");
+            Console.WriteLine($"HP: {enemy.HP} ATK: {enemy.Attack} DEF: {enemy.Defense}");
+            Console.WriteLine($"Особость: {enemy.GetSpecialDescription()}");
+
+            Fight(enemy);
+        }
+
+        private void Fight(Enemy enemy)
+        {
+            while (enemy.IsAlive && player.HP > 0)
+            {
+                Console.WriteLine("Ваш ход:");
+                Console.WriteLine("1 - Атака");
+                Console.WriteLine("2 - Защита");
+
+                int choice = GetChoice(1, 2);
+
+                if (choice == 1)
+                {
+                    int playerDamage = player.GetAttack();
+                    enemy.HP -= playerDamage - enemy.Defense;
+                    Console.WriteLine($"Урон: {playerDamage}");
+                    Console.WriteLine($"HP врага: {enemy.HP}");
+                }
+                else
+                {
+                    Console.WriteLine("Защита");
+                }
+
+                if (!enemy.IsAlive)
+                {
+                    Console.WriteLine("Победа!");
+                    break;
+                }
+
+                Console.WriteLine($"Ход {enemy.Name}");
+
+                bool defended = choice == 2;
+                bool dodged = false;
+                int blockAmount = 0;
+
+                if (defended)
+                {
+                    if (random.Next(100) < 40)
+                    {
+                        dodged = true;
+                        Console.WriteLine("Уклонение и контратака");
+                        enemy.HP -= (int)(enemy.Attack * 0.4);
+                        Console.WriteLine($"ХП врага: {enemy.HP}");
+
+                    }
+                    else
+                    {
+                        blockAmount = (int)(player.GetDefense() * (random.Next(70, 101) / 100.0));
+                        Console.WriteLine($"Блок: {blockAmount}");
+                    }
+                }
+
+                if (!dodged)
+                {
+                    enemy.SpecialAbility(player, random);
+
+                    int enemyDamage = enemy.Attack;
+                    bool isCrit = false;
+                    if (enemy is Skeleton)
+                    {
+                        enemyDamage = enemy.Attack;
+                    }
+                    else if (defended)
+                    {
+                        enemyDamage = Math.Max(0, enemy.Attack - blockAmount);
+                    }
+                    else
+                    {
+                        enemyDamage = Math.Max(0, enemy.Attack - player.GetDefense());
+                    }
+
+                    if (enemy is Goblin goblin)
+                    {
+                        if (random.Next(100) < 20)
+                        {
+                            isCrit = true;
+                            enemyDamage = (int)(enemy.Attack * 1.5);
+                        }
+                    }
+                    if (enemy is Mage)
+                    {
+                        if (random.Next(100) < 25)
+                        {
+                            playerFrozen = true;
+                            Console.WriteLine("Заморозка");
+                        }
+                    }
+
+                    player.HP -= enemyDamage;
+                    Console.WriteLine($"Урон: {enemyDamage}");
+                }
+                if (player.HP <= 0)
+                {
+                    Console.WriteLine("Смерть");
+                    break;
+                }
+            }
+        }
+        private void FindChest()
+        {
+            Console.WriteLine("Сундук");
+
+            switch (random.Next(3))
+            {
+                case 0:
+                    Console.WriteLine("Зелье здоровья");
+                    int healAmount = 30;
+                    player.HP = Math.Min(player.MaxHP, player.HP + healAmount);
+                    Console.WriteLine($"Восстановлено {healAmount} HP");
+                    Console.WriteLine($"Ваше HP: {player.HP}/{player.MaxHP}");
+                    break;
+
+                case 1:
+                    Item newWeapon = weapons[random.Next(weapons.Count)];
+                    Console.WriteLine($"Выпало оружие: {newWeapon.Name}");
+                    Console.WriteLine($"Атака: {newWeapon.Attack}");
+                    Console.WriteLine($"Ваше оружие: {player.Weapon.Name}");
+                    Console.WriteLine($"Атака: {player.Weapon.Attack}");
+                    OfferItem(newWeapon, true);
+                    break;
+
+                case 2:
+                    Item newArmor = armors[random.Next(armors.Count)];
+                    Console.WriteLine($"Выпала броня: {newArmor.Name}");
+                    Console.WriteLine($"Защита: {newArmor.Defense}");
+                    Console.WriteLine($"Ваша броня: {player.Armor.Name}");
+                    Console.WriteLine($"Защита: {player.Armor.Defense}");
+                    OfferItem(newArmor, false);
+                    break;
+            }
+        }
+
+        private void OfferItem(Item newItem, bool isWeapon)
+        {
+            Console.WriteLine("Взять предмет?");
+            Console.WriteLine("1 - Да");
+            Console.WriteLine("2 - Нет");
+
+            int choice = GetChoice(1, 2);
+
+            if (choice == 1)
+            {
+                if (isWeapon)
+                {
+                    player.Weapon = newItem;
+                    Console.WriteLine("Оружие экипировано");
+                }
+                else
+                {
+                    player.Armor = newItem;
+                    Console.WriteLine("Броня экипирована");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Предмет оставлен");
+            }
+        }
+
+        private int GetChoice(int min, int max)
+        {
+            while (true)
+            {
+                Console.Write($"Выбор ({min}-{max}): ");
+                if (int.TryParse(Console.ReadLine(), out int choice) && choice >= min && choice <= max)
+                {
+                    return choice;
+                }
+                Console.WriteLine("Ошибка");
+            }
+        }
+    }
+}
