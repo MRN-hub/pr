@@ -1,0 +1,222 @@
+using System;
+using System.Collections.Generic;
+
+public enum Category
+{
+    Электроника,
+    Еда,
+    Одежда
+}
+
+public class Product
+{
+    public string Unicode { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+    public int Quantity { get; set; }
+    public bool Have { get; set; }
+    public Category Category { get; set; }
+}
+
+class Program
+{
+    private static List<Product> products = new List<Product>();
+    private static int nextCode = 1;
+
+    static void Main(string[] ss)
+    {
+        prod(ss);
+    }
+
+    static void prod(string[] args)
+    {
+        string choise;
+        while (true)
+        {
+            Console.WriteLine("\n1. Добавить товар");
+            Console.WriteLine("2. Удалить товар");
+            Console.WriteLine("3. Заказать поставку товара");
+            Console.WriteLine("4. Продать товар");
+            Console.WriteLine("5. Поиск товара");
+            Console.WriteLine("6. Вывести все");
+            Console.WriteLine("7. Выход");
+            Console.Write("Выберите действие: ");
+            choise = Console.ReadLine();
+
+            switch (choise)
+            {
+                case "1":
+                    Addproduct();
+                    break;
+                case "2":
+                    Deleteproduct();
+                    break;
+                case "3":
+                    Orderproduct();
+                    break;
+                case "4":
+                    Sellproduct();
+                    break;
+                case "5":
+                    Searchproduct();
+                    break;
+                case "6":
+                    Showall();
+                    break;
+                case "7":
+                    return;
+                default:
+                    Console.WriteLine("Некорректный ввод.");
+                    break;
+            }
+        }
+    }
+
+    private static void Addproduct()
+    {
+        try
+        {
+            Console.Write("Введите имя товара: ");
+            string Name = Console.ReadLine();
+            Console.Write("Введите цену: ");
+            decimal Price = decimal.Parse(Console.ReadLine());
+            Console.Write("Введите количество товара: ");
+            int Quantity = int.Parse(Console.ReadLine());
+
+            Console.WriteLine("Выберите категорию:");
+            foreach (Category cat in Enum.GetValues(typeof(Category)))
+            {
+                Console.WriteLine($"{(int)cat}. {cat}");
+            }
+            int catChoise = int.Parse(Console.ReadLine());
+            Category category = (Category)catChoise;
+
+            Product product = new Product
+            {
+                Unicode = nextCode++.ToString(),
+                Name = Name,
+                Price = Price,
+                Quantity = Quantity,
+                Have = Quantity > 0,
+                Category = category,
+            };
+            products.Add(product);
+            Console.WriteLine($"Товар Код: {product.Unicode}");
+        }
+        catch (FormatException)
+        {
+            Console.WriteLine("Нет");
+        }
+    }
+    private static void Deleteproduct()
+    {
+        Console.Write("Введите код для удаление товара: ");
+        string code = Console.ReadLine();
+        Product product = products.FirstOrDefault(p => p.Unicode == code);
+        if(product == null)
+        {
+            Console.WriteLine("Нет");
+            return;
+        }
+        products.Remove(product);
+        Console.WriteLine("Удалил");
+    }
+    private static void Orderproduct()
+    {
+        Console.Write("Введите код для поставки товара: ");
+        string post = Console.ReadLine();
+        Product product = products.FirstOrDefault(p => p.Unicode == post);
+        if (product == null)
+        {
+            Console.WriteLine("Нет");
+            return;
+        }
+        Console.Write("Введите кол-во для поставки: ");
+        int quan = int.Parse(Console.ReadLine());
+        product.Quantity += quan;
+        product.Have = product.Quantity > 0;
+        Console.WriteLine("Поставка заказана");
+    }
+    private static void Sellproduct()
+    {
+        Console.Write("Введите код для поставки товара: ");
+        string post = Console.ReadLine();
+        Product product = products.FirstOrDefault(p => p.Unicode == post);
+        if (product == null)
+        {
+            Console.WriteLine("Нет");
+            return;
+        }
+        Console.Write("Введите кол-во для продажи: ");
+        int quan = int.Parse(Console.ReadLine());
+        if (quan > product.Quantity)
+        {
+            Console.WriteLine("Нет");
+            return;
+        }
+        product.Quantity -= quan;
+        product.Have = product.Quantity > 0;
+        Console.WriteLine("Поставка заказана");
+    }
+    private static void Searchproduct()
+    {
+        Console.WriteLine("1. Код");
+        Console.WriteLine("2. Имя");
+        Console.WriteLine("3. Категории");
+        Console.Write("Выбери");
+        string choise = Console.ReadLine();
+        List<Product> result = new List<Product>();
+        switch (choise)
+        {
+            case "1":
+                Console.Write("Введите код: ");
+                string code = Console.ReadLine();
+                result = products.Where(p => p.Unicode.Contains(code)).ToList();
+                break;
+            case "2":
+                Console.Write("Введите название товара: ");
+                string name = Console.ReadLine();
+                result = products.Where(p => p.Name.Contains(name, StringComparison.OrdinalIgnoreCase)).ToList();
+                break;
+            case "3":
+                Console.WriteLine("Выберите категорию:");
+                foreach (Category cat in Enum.GetValues(typeof(Category)))
+                {
+                    Console.WriteLine($"{(int)cat}. {cat}");
+                }
+                int catChoice = int.Parse(Console.ReadLine());
+                Category category = (Category)catChoice;
+                result = products.Where(p => p.Category == category).ToList();
+                break;
+            default:
+                Console.WriteLine("Некорректный ввод.");
+                return;
+        }
+        if(result.Count == 0)
+        {
+            Console.WriteLine("Нет");
+            return;
+        }
+        Console.WriteLine("\nРезультат поиска:");
+        Console.WriteLine("Код\tНазвание\tЦена\tКоличество\tНаличие\tКатегория");
+        foreach (var product in result)
+        {
+            Console.WriteLine($"{product.Unicode}\t{product.Name}\t\t{product.Price}\t{product.Quantity}\t\t{(product.Have ? "Да" : "Нет")}\t{product.Category}");
+        }
+    }
+    private static void Showall()
+    {
+        if (products.Count == 0)
+        {
+            Console.WriteLine("Список товаров пуст.");
+            return;
+        }
+
+        Console.WriteLine("\nСписок всех товаров:");
+        Console.WriteLine("Код\tНазвание\tЦена\tКоличество\tНаличие\tКатегория");
+        foreach (var product in products)
+        {
+            Console.WriteLine($"{product.Unicode}\t{product.Name}\t\t{product.Price}\t{product.Quantity}\t\t{(product.Have ? "Да" : "Нет")}\t{product.Category}");
+        }
+    }
+}
