@@ -1,0 +1,166 @@
+using System;
+using System.Collections.Generic;
+
+class Pr3
+{
+    static List<Dictionary<string, object>> statisticsList = new List<Dictionary<string, object>>();
+    static void Main(string[] ss)
+    {
+        prod(ss);
+    }
+    static void prod(string[] ss)
+    {
+        string Text = "";
+        while (true)
+        {
+            Console.Write("Введите текст:\n");
+            Text = Console.ReadLine();
+            if (Text != null && Text.Length < 100)
+            {
+                Console.WriteLine("Нет");
+                continue;
+            }
+            string choise;
+            while (true)
+            {
+                Console.WriteLine("\n1. Подсчет кол-ва слов");
+                Console.WriteLine("2. Самое маленькое слово");
+                Console.WriteLine("3. Подсчет количества предложений");
+                Console.WriteLine("4. Подсчет гласных и согласных букв");
+                Console.WriteLine("5. Поиск самого длинного слова");
+                Console.WriteLine("6. Создание статистики по частоте встречаемости каждой буквы");
+                Console.WriteLine("7. Новый текст");
+                Console.WriteLine("8. Сохранить всю статистику в список");
+                Console.WriteLine("9. Вывести всю статистику по прошлым текстам в список");
+                Console.Write("Выберите действие: ");
+                choise = Console.ReadLine();
+                switch (choise)
+                {
+                    case "1":
+                        string[] wordCounts = Text.Split(new[] { ' ', '\t', '\n', '.', ',', '!', '?' }, StringSplitOptions.RemoveEmptyEntries);
+                        int wordCount = wordCounts.Length;
+                        Console.Write($"Количество слов:\n{wordCount}");
+                        break;
+                    case "2":
+                        string[] wordSmall = Text.Split(new[] { ' ', '\t', '\n', '.', ',', '!', '?' }, StringSplitOptions.RemoveEmptyEntries);
+                        string smallestWord = wordSmall.MinBy(word => word.Length);
+                        Console.Write($"Самое маленькое слово:\n{smallestWord}");
+                        break;
+                    case "3":
+                        string[] sentences = Text.Split(new[] { '.', '!', '?' }, StringSplitOptions.RemoveEmptyEntries);
+                        int sentenceCount = sentences.Length;
+                        Console.Write($"Количество предложений:\n{sentenceCount}");
+                        break;
+                    case "4":
+                        int vowels = 0, consonants = 0;
+                        string lowerText = Text.ToLower();
+                        foreach (char c in lowerText)
+                        {
+                            if (char.IsLetter(c))
+                            {
+                                if ("аеёиоуыэюя".Contains(c))
+                                    vowels++;
+                                else
+                                    consonants++;
+                            }
+                        }
+                        Console.WriteLine($"Гласных букв: {vowels}\nСогласных букв: {consonants}");
+                        break;
+                    case "5":
+                        string[] wordLarge = Text.Split(new[] { ' ', '\t', '\n', '.', ',', '!', '?' }, StringSplitOptions.RemoveEmptyEntries);
+                        string LargestWord = wordLarge.MaxBy(word => word.Length);
+                        Console.Write($"Самое большое слово:\n{LargestWord}");
+                        break;
+                    case "6":
+                        var letterStats = new Dictionary<char, int>();
+                        foreach (char c in Text.ToLower())
+                        {
+                            if (char.IsLetter(c))
+                            {
+                                if (letterStats.ContainsKey(c))
+                                    letterStats[c]++;
+                                else
+                                    letterStats.Add(c, 1);
+                            }
+                        }
+                        Console.WriteLine("Статистика по частоте встречаемости букв:");
+                        foreach (var lett in letterStats.OrderBy(kvp => kvp.Key))
+                        {
+                            Console.WriteLine($"{lett.Key}: {lett.Value}");
+                        }
+                        break;
+                    case "7":
+                        break;
+                    case "8":
+                        var currentStats = new Dictionary<string, object>();
+                        string[] words = Text.Split(new[] { ' ', '\t', '\n', '.', ',', '!', '?' }, StringSplitOptions.RemoveEmptyEntries);
+                        currentStats["Текст"] = Text;
+                        currentStats["Количество слов"] = words.Length;
+                        currentStats["Самое маленькое слово"] = words.MinBy(word => word.Length);
+                        currentStats["Количество предложений"] = Text.Split(new[] { '.', '!', '?' }, StringSplitOptions.RemoveEmptyEntries).Length;
+                        int v = 0, d = 0;
+                        foreach (char ch in Text.ToLower())
+                        {
+                            if (char.IsLetter(ch))
+                            {
+                                if ("аеёиоуыэюя".Contains(ch))
+                                    v++;
+                                else
+                                    d++;
+                            }
+                        }
+                        currentStats["Гласных букв"] = v;
+                        currentStats["Согласных букв"] = d;
+                        currentStats["Самое большое слово"] = words.MaxBy(word => word.Length);
+                        var ls = new Dictionary<char, int>();
+                        foreach (char ch in Text.ToLower())
+                        {
+                            if (char.IsLetter(ch))
+                            {
+                                if (ls.ContainsKey(ch))
+                                    ls[ch]++;
+                                else
+                                    ls.Add(ch, 1);
+                            }
+                        }
+                        currentStats["Статистика по буквам"] = ls;
+                        statisticsList.Add(currentStats);
+                        Console.WriteLine("Статистика сохранена!");
+                        break;
+                    case "9":
+                        if (statisticsList.Count == 0)
+                        {
+                            Console.WriteLine("Нет");
+                            break;
+                        }
+                        Console.WriteLine("\nСохранённая статистика по всем текстам:");
+                        for (int i = 0; i < statisticsList.Count; i++)
+                        {
+                            Console.WriteLine($"\nТекст {i + 1}:");
+                            foreach (var stat in statisticsList[i])
+                            {
+                                if (stat.Key == "Статистика по буквам")
+                                {
+                                    Console.WriteLine($"{stat.Key}:");
+                                    foreach (var letter in (Dictionary<char, int>)stat.Value)
+                                    {
+                                        Console.WriteLine($"{letter.Key}: {letter.Value}");
+                                    }
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"{stat.Key}: {stat.Value}");
+                                }
+                            }
+                        }
+                        break;
+                    default:
+                        Console.WriteLine("Некорректный ввод.");
+                        break;
+                }
+                if (choise == "7")
+                    break;
+            }
+        }
+    }
+}
